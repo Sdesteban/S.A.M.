@@ -1,0 +1,894 @@
+<html><head><base href="." />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Sistema Ambiental Multifuncional (S.A.M.) - Chimbote">
+<title>S.A.M. Chimbote</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+
+<style>
+:root {
+  --primary: #2E7D32;
+  --secondary: #1565C0;
+  --danger: #D32F2F;
+  --background: #F5F7FA;
+  --surface: #FFFFFF;
+  --text: #333333;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+  background: var(--background);
+}
+
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.login-form {
+  background: var(--surface);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-form h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: var(--primary);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.btn {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #1B5E20;
+}
+
+.dashboard {
+  display: none;
+  grid-template-columns: 250px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: var(--surface);
+  padding: 1rem;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-item {
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.nav-item:hover {
+  background: var(--background);
+}
+
+.main-content {
+  padding: 2rem;
+}
+
+#map {
+  height: 70vh;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background-color: #f4f4f4;
+  border-bottom: 1px solid #ccc;
+}
+
+.green-btn, .red-btn {
+  padding: 10px 15px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  color: white;
+}
+
+.green-btn {
+  background-color: lightgreen;
+}
+
+.red-btn {
+  background-color: lightcoral;
+}
+
+.finish-btn {
+  background-color: #007BFF;
+  color: white;
+  padding: 10px 15px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+}
+
+.area-list {
+  margin: 0;
+  padding: 10px;
+  list-style: none;
+  background-color: #f8f9fa;
+  border-top: 1px solid #ccc;
+}
+
+.area-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px;
+  border-bottom: 1px solid #ccc;
+}
+
+.area-list button {
+  padding: 5px 10px;
+  color: white;
+  background-color: red;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.user-list {
+  background: var(--surface);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.user-item {
+  padding: 1rem;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.waste-map-container { 
+  height: 400px; 
+  margin-top: 20px;
+}
+
+#wasteMap { 
+  height: 100%; 
+}
+
+.custom-marker { 
+  font-size: 24px; 
+}
+
+.available { 
+  color: green; 
+}
+
+.occupied { 
+  color: red; 
+}
+
+.add-user-btn {
+  margin-bottom: 1rem;
+}
+
+.user-card {
+  background: white;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.user-card .user-details {
+  margin-bottom: 0.5rem;
+}
+
+.user-card .user-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+</style>
+</head>
+<body>
+
+<div class="login-container" id="loginPage">
+  <form class="login-form" onsubmit="handleLogin(event)">
+    <h1>S.A.M. Chimbote</h1>
+    <div class="form-group">
+      <label for="username">Usuario</label>
+      <input type="text" id="username" required>
+    </div>
+    <div class="form-group">
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+  </form>
+</div>
+
+<div class="dashboard" id="dashboardPage">
+  <aside class="sidebar">
+    <div class="nav-item" onclick="showSection('environmental')">Situación Ambiental</div>
+    <div class="nav-item" onclick="showSection('waste')">Gestión de Residuos</div>
+    <div class="nav-item" onclick="showSection('users')">Gestión de Usuarios</div>
+    <div class="nav-item" onclick="logout()">Cerrar Sesión</div>
+  </aside>
+
+  <main class="main-content">
+    <div id="environmentalSection">
+      <div class="controls">
+        <button class="green-btn" id="add-green-area">Agregar Área Verde</button>
+        <button class="red-btn" id="add-red-area">Agregar Área Roja</button>
+        <button class="finish-btn" id="finish-area" style="display: none;">Finalizar</button>
+      </div>
+      <div id="map"></div>
+      <ul class="area-list" id="area-list"></ul>
+    </div>
+
+    <div id="wasteSection" style="display: none;">
+      <h2>Gestión de Transportes</h2>
+      
+      <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#transportModal">
+        Añadir Transporte
+      </button>
+
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Placa</th>
+              <th>Situación</th>
+              <th>Conductor</th>
+              <th>DNI</th>
+              <th>Sede</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="transportList"></tbody>
+        </table>
+      </div>
+
+      <h2 class="mt-4">Mapa de Transportes</h2>
+      <div class="waste-map-container mb-3">
+        <div id="wasteMap"></div>
+      </div>
+      
+      <button id="moveTransportBtn" class="btn btn-primary">Mover Transporte</button>
+      <button id="finishMoveBtn" class="btn btn-success" style="display: none;">Finalizar</button>
+    </div>
+
+    <div id="usersSection" style="display: none;">
+      <h2>Gestión de Usuarios</h2>
+      <button class="btn btn-primary add-user-btn" onclick="showAddUserModal()">Añadir Usuario</button>
+      <div class="user-list" id="userList"></div>
+    </div>
+  </main>
+</div>
+
+<!-- Transport Modal -->
+<div class="modal fade" id="transportModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle">Añadir Transporte</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="transportForm">
+          <input type="hidden" id="editIndex" value="">
+          <div class="mb-3">
+            <label class="form-label">Placa</label>
+            <input type="text" class="form-control" id="placa" maxlength="6" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Situación</label>
+            <select class="form-control" id="situacion" required>
+              <option value="Disponible">Disponible</option>
+              <option value="Ocupado">Ocupado</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Conductor</label>
+            <input type="text" class="form-control" id="conductor" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">DNI</label>
+            <input type="text" class="form-control" id="dni" pattern="[0-9]{7}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Sede</label>
+            <select class="form-control" id="sede" required>
+              <option value="Chimbote">Chimbote</option>
+              <option value="Nvo. Chimbote">Nvo. Chimbote</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- User Modal -->
+<div class="modal fade" id="userModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="userModalTitle">Añadir Usuario</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="userForm">
+          <input type="hidden" id="userEditIndex" value="">
+          <div class="mb-3">
+            <label class="form-label">Nombres y Apellidos</label>
+            <input type="text" class="form-control" id="userName" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">DNI</label>
+            <input type="text" class="form-control" id="userDni" pattern="[0-9]{8}" maxlength="8" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Usuario</label>
+            <input type="text" class="form-control" id="userUsername" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Contraseña</label>
+            <input type="password" class="form-control" id="userPassword" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Rol</label>
+            <select class="form-control" id="userRole" required>
+              <option value="senior_admin">Administrador</option>
+              <option value="user">Usuario</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Sede</label>
+            <select class="form-control" id="userSede" required>
+              <option value="Chimbote">Chimbote</option>
+              <option value="Nvo. Chimbote">Nvo. Chimbote</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const users = [
+  { 
+    username: 'Admin', 
+    password: 'Admin1234', 
+    role: 'senior_admin',
+    fullName: 'Administrador Principal',
+    dni: '12345678',
+    sede: 'Chimbote'
+  },
+  { 
+    username: 'user', 
+    password: 'user123', 
+    role: 'user',
+    fullName: 'Usuario Demo',
+    dni: '87654321',
+    sede: 'Nvo. Chimbote'
+  }
+];
+
+let currentUser = null;
+let map;
+let drawnItems = [];
+let currentArea = [];
+let drawingType = null;
+let tempPolyline = null;
+let uniqueId = 0;
+
+let transports = [];
+let markers = [];
+let wasteMap;
+let transportModal;
+let userModal;
+let isEditMode = false;
+
+function handleLogin(event) {
+  event.preventDefault();
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+
+  const user = users.find(u => u.username === username && u.password === password);
+  if (user) {
+    currentUser = user;
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('dashboardPage').style.display = 'grid';
+    initMap();
+    initWasteMap();
+  } else {
+    alert('Credenciales inválidas');
+  }
+}
+
+function logout() {
+  currentUser = null;
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('dashboardPage').style.display = 'none';
+}
+
+function initMap() {
+  map = L.map('map').setView([-9.0635, -78.5894], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+  }).addTo(map);
+
+  const areaListElement = document.getElementById("area-list");
+
+  const addPolygon = (coords, color, name) => {
+    const polygon = L.polygon(coords, { color, fillOpacity: 0.5 }).addTo(map);
+    polygon.bindPopup(name);
+    const areaData = { id: uniqueId++, name, polygon, color };
+    drawnItems.push(areaData);
+    updateAreaList();
+  };
+
+  const updateAreaList = () => {
+    areaListElement.innerHTML = '';
+    drawnItems.forEach(item => {
+      const listItem = document.createElement('li');
+      listItem.textContent = item.name;
+
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Eliminar';
+      deleteButton.onclick = () => {
+        map.removeLayer(item.polygon);
+        drawnItems = drawnItems.filter(area => area.id !== item.id);
+        updateAreaList();
+      };
+
+      listItem.appendChild(deleteButton);
+      areaListElement.appendChild(listItem);
+    });
+  };
+
+  const startDrawing = (type) => {
+    if (currentUser.role !== 'senior_admin') {
+      alert('Solo administradores pueden modificar áreas');
+      return;
+    }
+    drawingType = type;
+    currentArea = [];
+    if (tempPolyline) {
+      map.removeLayer(tempPolyline);
+      tempPolyline = null;
+    }
+    document.getElementById('finish-area').style.display = 'inline-block';
+  };
+
+  document.getElementById('finish-area').addEventListener('click', () => {
+    if (drawingType && currentArea.length > 2) {
+      const name = prompt("Ingresa un nombre para esta área:");
+      if (!name) {
+        alert("Debes ingresar un nombre para el área.");
+        return;
+      }
+
+      if (tempPolyline) {
+        map.removeLayer(tempPolyline);
+        tempPolyline = null;
+      }
+
+      const color = drawingType === 'green' ? 'green' : 'red';
+      addPolygon(currentArea, color, name);
+
+      drawingType = null;
+      currentArea = [];
+      document.getElementById('finish-area').style.display = 'none';
+      alert('Área añadida correctamente.');
+    } else {
+      alert('Debes seleccionar al menos tres puntos para el área.');
+    }
+  });
+
+  map.on('click', (e) => {
+    if (drawingType) {
+      const { lat, lng } = e.latlng;
+      currentArea.push([lat, lng]);
+
+      if (currentArea.length > 1) {
+        if (tempPolyline) {
+          map.removeLayer(tempPolyline);
+        }
+        tempPolyline = L.polyline(currentArea, { color: drawingType === 'green' ? 'green' : 'red' }).addTo(map);
+      }
+    }
+  });
+
+  document.getElementById('add-green-area').addEventListener('click', () => {
+    startDrawing('green');
+  });
+
+  document.getElementById('add-red-area').addEventListener('click', () => {
+    startDrawing('red');
+  });
+}
+
+function initWasteMap() {
+  transportModal = new bootstrap.Modal(document.getElementById('transportModal'));
+  userModal = new bootstrap.Modal(document.getElementById('userModal'));
+  
+  wasteMap = L.map('wasteMap').setView([-9.0758, -78.5922], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+  }).addTo(wasteMap);
+
+  document.getElementById('transportForm').addEventListener('submit', handleTransportSubmit);
+  document.getElementById('moveTransportBtn').addEventListener('click', enableMarkerDragging);
+  document.getElementById('finishMoveBtn').addEventListener('click', disableMarkerDragging);
+}
+
+function handleTransportSubmit(e) {
+  e.preventDefault();
+  const editIndex = document.getElementById('editIndex').value;
+  const transport = {
+    placa: document.getElementById('placa').value,
+    situacion: document.getElementById('situacion').value,
+    conductor: document.getElementById('conductor').value,
+    dni: document.getElementById('dni').value,
+    sede: document.getElementById('sede').value,
+    position: editIndex !== '' ? transports[editIndex].position : getRandomPosition()
+  };
+
+  if (editIndex === '') {
+    transports.push(transport);
+    addMarkerToMap(transport, transports.length - 1);
+  } else {
+    transports[editIndex] = transport;
+    updateMarker(editIndex);
+  }
+
+  updateTransportList();
+  transportModal.hide();
+  e.target.reset();
+  document.getElementById('editIndex').value = '';
+}
+
+function getRandomPosition() {
+  const bounds = {
+    chimbote: {
+      lat: [-9.0858, -9.0658],
+      lng: [-78.5922, -78.5722]
+    },
+    nuevoChimbote: {
+      lat: [-9.1258, -9.1058],
+      lng: [-78.5522, -78.5322]
+    }
+  };
+
+  const useChimbote = Math.random() < 0.5;
+  const area = useChimbote ? bounds.chimbote : bounds.nuevoChimbote;
+  
+  return [
+    area.lat[0] + Math.random() * (area.lat[1] - area.lat[0]),
+    area.lng[0] + Math.random() * (area.lng[1] - area.lng[0])
+  ];
+}
+
+function addMarkerToMap(transport, index) {
+  const icon = L.divIcon({
+    html: `<i class="bi bi-truck ${transport.situacion === 'Disponible' ? 'available' : 'occupied'}"></i>`,
+    className: 'custom-marker',
+    iconSize: [30, 30]
+  });
+
+  const marker = L.marker(transport.position, {icon: icon, draggable: false})
+    .addTo(wasteMap)
+    .bindPopup(`Placa: ${transport.placa}<br>Conductor: ${transport.conductor}`);
+  
+  markers[index] = marker;
+}
+
+function updateMarker(index) {
+  const transport = transports[index];
+  if (markers[index]) {
+    markers[index].remove();
+  }
+  addMarkerToMap(transport, index);
+}
+
+function updateTransportList() {
+  const tbody = document.getElementById('transportList');
+  tbody.innerHTML = '';
+  
+  transports.forEach((transport, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${transport.placa}</td>
+      <td>${transport.situacion}</td>
+      <td>${transport.conductor}</td>
+      <td>${transport.dni}</td>
+      <td>${transport.sede}</td>
+      <td>
+        <button class="btn btn-sm btn-primary btn-xs" onclick="editTransport(${index})">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="btn btn-sm btn-danger btn-xs" onclick="deleteTransport(${index})">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function editTransport(index) {
+  if (currentUser.role !== 'senior_admin') {
+    alert('Solo administradores pueden editar transportes');
+    return;
+  }
+  const transport = transports[index];
+  document.getElementById('editIndex').value = index;
+  document.getElementById('placa').value = transport.placa;
+  document.getElementById('situacion').value = transport.situacion;
+  document.getElementById('conductor').value = transport.conductor;
+  document.getElementById('dni').value = transport.dni;
+  document.getElementById('sede').value = transport.sede;
+  document.getElementById('modalTitle').textContent = 'Editar Transporte';
+  transportModal.show();
+}
+
+function deleteTransport(index) {
+  if (currentUser.role !== 'senior_admin') {
+    alert('Solo administradores pueden eliminar transportes');
+    return;
+  }
+  if (confirm('¿Está seguro de eliminar este transporte?')) {
+    if (markers[index]) {
+      markers[index].remove();
+    }
+    markers.splice(index, 1);
+    transports.splice(index, 1);
+    updateTransportList();
+  }
+}
+
+function enableMarkerDragging() {
+  if (currentUser.role !== 'senior_admin') {
+    alert('Solo administradores pueden mover transportes');
+    return;
+  }
+  markers.forEach(marker => {
+    marker.dragging.enable();
+  });
+  document.getElementById('moveTransportBtn').style.display = 'none';
+  document.getElementById('finishMoveBtn').style.display = 'inline';
+}
+
+function disableMarkerDragging() {
+  markers.forEach((marker, index) => {
+    marker.dragging.disable();
+    transports[index].position = [marker.getLatLng().lat, marker.getLatLng().lng];
+  });
+  document.getElementById('moveTransportBtn').style.display = 'inline';
+  document.getElementById('finishMoveBtn').style.display = 'none';
+}
+
+function showSection(section) {
+  if (currentUser.role === 'user' && section === 'users') {
+    alert('No tienes permisos para acceder a esta sección');
+    return;
+  }
+
+  document.getElementById('environmentalSection').style.display = 
+    section === 'environmental' ? 'block' : 'none';
+  document.getElementById('wasteSection').style.display = 
+    section === 'waste' ? 'block' : 'none';
+  document.getElementById('usersSection').style.display = 
+    section === 'users' ? 'block' : 'none';
+
+  if (currentUser.role === 'user') {
+    document.getElementById('add-green-area').style.display = 'none';
+    document.getElementById('add-red-area').style.display = 'none';
+    document.getElementById('finish-area').style.display = 'none';
+    
+    const editButtons = document.querySelectorAll('.btn-primary.btn-xs');
+    const deleteButtons = document.querySelectorAll('.btn-danger.btn-xs');
+    editButtons.forEach(btn => btn.style.display = 'none');
+    deleteButtons.forEach(btn => btn.style.display = 'none');
+    
+    document.querySelector('[data-bs-target="#transportModal"]').style.display = 'none';
+    document.getElementById('moveTransportBtn').style.display = 'none';
+    document.getElementById('finishMoveBtn').style.display = 'none';
+  }
+
+  if (section === 'environmental' && map) {
+    map.invalidateSize();
+  }
+  if (section === 'waste' && wasteMap) {
+    wasteMap.invalidateSize();
+  }
+  if (section === 'users') {
+    updateUsersList();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('dashboardPage').style.display = 'none';
+  userModal = new bootstrap.Modal(document.getElementById('userModal'));
+  
+  document.getElementById('userForm').addEventListener('submit', handleUserSubmit);
+});
+
+function showAddUserModal() {
+  document.getElementById('userForm').reset();
+  document.getElementById('userEditIndex').value = '';
+  document.getElementById('userModalTitle').textContent = 'Añadir Usuario';
+  userModal.show();
+}
+
+function handleUserSubmit(e) {
+  e.preventDefault();
+  const editIndex = document.getElementById('userEditIndex').value;
+  
+  const userData = {
+    username: document.getElementById('userUsername').value,
+    password: document.getElementById('userPassword').value,
+    fullName: document.getElementById('userName').value,
+    dni: document.getElementById('userDni').value,
+    role: document.getElementById('userRole').value,
+    sede: document.getElementById('userSede').value
+  };
+
+  if (editIndex === '') {
+    users.push(userData);
+  } else {
+    users[editIndex] = userData;
+  }
+
+  updateUsersList();
+  userModal.hide();
+  e.target.reset();
+}
+
+function updateUsersList() {
+  const userList = document.getElementById('userList');
+  userList.innerHTML = '';
+  
+  users.forEach((user, index) => {
+    const userCard = document.createElement('div');
+    userCard.className = 'user-card';
+    userCard.innerHTML = `
+      <div class="user-details">
+        <strong>${user.fullName}</strong><br>
+        DNI: ${user.dni}<br>
+        Usuario: ${user.username}<br>
+        Rol: ${user.role === 'senior_admin' ? 'Administrador' : 'Usuario'}<br>
+        Sede: ${user.sede}
+      </div>
+      <div class="user-actions">
+        <button class="btn btn-sm btn-primary" onclick="editUser(${index})">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="btn btn-sm btn-danger" onclick="deleteUser(${index})">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    `;
+    userList.appendChild(userCard);
+  });
+}
+
+function editUser(index) {
+  const user = users[index];
+  document.getElementById('userEditIndex').value = index;
+  document.getElementById('userName').value = user.fullName;
+  document.getElementById('userDni').value = user.dni;
+  document.getElementById('userUsername').value = user.username;
+  document.getElementById('userPassword').value = user.password;
+  document.getElementById('userRole').value = user.role;
+  document.getElementById('userSede').value = user.sede;
+  document.getElementById('userModalTitle').textContent = 'Editar Usuario';
+  userModal.show();
+}
+
+function deleteUser(index) {
+  if (users[index].username === 'Admin') {
+    alert('No se puede eliminar al administrador principal');
+    return;
+  }
+  
+  if (confirm('¿Está seguro de eliminar este usuario?')) {
+    users.splice(index, 1);
+    updateUsersList();
+  }
+}
+
+function handleTransportSubmit(e) {
+  if (currentUser.role !== 'senior_admin') {
+    alert('Solo administradores pueden modificar transportes');
+    return;
+  }
+  e.preventDefault();
+  const editIndex = document.getElementById('editIndex').value;
+  const transport = {
+    placa: document.getElementById('placa').value,
+    situacion: document.getElementById('situacion').value,
+    conductor: document.getElementById('conductor').value,
+    dni: document.getElementById('dni').value,
+    sede: document.getElementById('sede').value,
+    position: editIndex !== '' ? transports[editIndex].position : getRandomPosition()
+  };
+
+  if (editIndex === '') {
+    transports.push(transport);
+    addMarkerToMap(transport, transports.length - 1);
+  } else {
+    transports[editIndex] = transport;
+    updateMarker(editIndex);
+  }
+
+  updateTransportList();
+  transportModal.hide();
+  e.target.reset();
+  document.getElementById('editIndex').value = '';
+}
+</script>
+
+</body>
+</html>
